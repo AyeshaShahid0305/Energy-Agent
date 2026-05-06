@@ -1,1 +1,3 @@
-notepad .gitignore
+node_modules
+.env
+.git
