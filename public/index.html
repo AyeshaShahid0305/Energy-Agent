@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>⚡ Pakistan Energy Optimizer</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #0a0a0f; color: #e8e6e0; min-height: 100vh; }
+header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px 24px; border-bottom: 2px solid #f59e0b; display: flex; align-items: center; gap: 14px; }
+header h1 { font-size: 22px; color: #f59e0b; }
+header p { font-size: 12px; color: #888; }
+.tabs { display: flex; background: #111118; border-bottom: 1px solid #222; overflow-x: auto; }
+.tab { padding: 14px 20px; cursor: pointer; font-size: 13px; border: none; background: transparent; color: #666; border-bottom: 3px solid transparent; white-space: nowrap; transition: all .2s; }
+.tab.active { color: #f59e0b; border-bottom-color: #f59e0b; background: #16161e; }
+.tab:hover { color: #ccc; }
+.page { display: none; padding: 24px; max-width: 800px; margin: 0 auto; }
+.page.active { display: block; }
+.card { background: #16161e; border: 1px solid #2a2a3a; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card h2 { font-size: 16px; color: #f59e0b; margin-bottom: 16px; }
+label { display: block; font-size: 12px; color: #888; margin-bottom: 6px; margin-top: 14px; }
+input, select { width: 100%; padding: 10px 14px; background: #0d0d14; border: 1px solid #2a2a3a; border-radius: 8px; color: #e8e6e0; font-size: 14px; outline: none; }
+input:focus, select:focus { border-color: #f59e0b; }
+button { margin-top: 16px; padding: 12px 24px; background: #f59e0b; color: #000; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: opacity .2s; }
+button:hover { opacity: .85; }
+.result { margin-top: 16px; padding: 16px; background: #0d0d14; border: 1px solid #2a2a3a; border-radius: 8px; display: none; }
+.result.show { display: block; }
+.result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1e1e28; font-size: 14px; }
+.result-row:last-child { border-bottom: none; font-weight: 700; color: #f59e0b; font-size: 16px; }
+.warning { margin-top: 12px; padding: 10px 14px; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); border-radius: 8px; font-size: 12px; color: #fca5a5; }
+.success { margin-top: 12px; padding: 10px 14px; background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.3); border-radius: 8px; font-size: 12px; color: #6ee7b7; }
+#chat-messages { height: 400px; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #0d0d14; border-radius: 8px; margin-bottom: 12px; }
+.msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; }
+.msg.user { align-self: flex-end; background: #f59e0b; color: #000; border-bottom-right-radius: 4px; }
+.msg.bot { align-self: flex-start; background: #1e1e28; color: #e8e6e0; border-bottom-left-radius: 4px; }
+.msg.typing { color: #666; font-style: italic; }
+.chat-input { display: flex; gap: 8px; }
+.chat-input input { flex: 1; }
+.chat-input button { margin-top: 0; padding: 10px 20px; }
+.solar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.solar-stat { background: #0d0d14; border: 1px solid #2a2a3a; border-radius: 8px; padding: 14px; text-align: center; }
+.solar-stat .val { font-size: 22px; font-weight: 700; color: #f59e0b; }
+.solar-stat .lbl { font-size: 11px; color: #666; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="font-size:32px">⚡</div>
+  <div>
+    <h1>Pakistan Energy Optimizer</h1>
+    <p>Smart electricity cost analyzer · NEPRA tariffs · Solar advisor</p>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('bill', this)">🧾 Bill Calculator</button>
+  <button class="tab" onclick="showTab('appliance', this)">🔌 Appliance Cost</button>
+  <button class="tab" onclick="showTab('solar', this)">☀️ Solar Advisor</button>
+  <button class="tab" onclick="showTab('chat', this)">🤖 AI Advisor</button>
+</div>
+
+<div class="page active" id="page-bill">
+  <div class="card">
+    <h2>🧾 Bill Calculator</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:4px">Enter your monthly units consumed from your WAPDA/LESCO bill</p>
+    <label>Monthly Units Consumed</label>
+    <input type="number" id="bill-units" placeholder="e.g. 350" min="1"/>
+    <button onclick="calcBill()">Calculate Bill</button>
+    <div class="result" id="bill-result">
+      <div class="result-row"><span>Unit Cost</span><span id="r-unit">—</span></div>
+      <div class="result-row"><span>Fuel Adjustment</span><span id="r-fuel">—</span></div>
+      <div class="result-row"><span>Electricity Duty</span><span id="r-duty">—</span></div>
+      <div class="result-row"><span>TV Fee + Meter Rent</span><span id="r-extra">—</span></div>
+      <div class="result-row"><span>Total Payable</span><span id="r-total">—</span></div>
+    </div>
+    <div id="bill-warning"></div>
+  </div>
+</div>
+
+<div class="page" id="page-appliance">
+  <div class="card">
+    <h2>🔌 Appliance Cost Calculator</h2>
+    <label>Select Appliance</label>
+    <select id="app-select">
+      <option value="ac_1ton">AC 1 Ton</option>
+      <option value="ac_1_5ton">AC 1.5 Ton</option>
+      <option value="ac_2ton">AC 2 Ton</option>
+      <option value="geyser">Electric Geyser</option>
+      <option value="fridge">Refrigerator</option>
+      <option value="washing_machine">Washing Machine</option>
+      <option value="iron">Iron</option>
+      <option value="fan">Ceiling Fan</option>
+      <option value="led_bulb">LED Bulb</option>
+      <option value="motor">Water Motor</option>
+      <option value="tv">LED TV</option>
+      <option value="microwave">Microwave</option>
+    </select>
+    <label>Hours Used Per Day</label>
+    <input type="number" id="app-hours" placeholder="e.g. 8" min="0.5" max="24" step="0.5"/>
+    <button onclick="calcAppliance()">Calculate Cost</button>
+    <div class="result" id="app-result">
+      <div class="result-row"><span>Appliance</span><span id="a-name">—</span></div>
+      <div class="result-row"><span>Units Per Day</span><span id="a-upd">—</span></div>
+      <div class="result-row"><span>Units Per Month</span><span id="a-upm">—</span></div>
+      <div class="result-row"><span>Cost Per Day</span><span id="a-cpd">—</span></div>
+      <div class="result-row"><span>Cost Per Month</span><span id="a-cpm">—</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-solar">
+  <div class="card">
+    <h2>☀️ Solar Advisor</h2>
+    <label>Monthly Units Consumed</label>
+    <input type="number" id="sol-units" placeholder="e.g. 500" min="1"/>
+    <label>Your City</label>
+    <select id="sol-city">
+      <option value="lahore">Lahore</option>
+      <option value="karachi">Karachi</option>
+      <option value="islamabad">Islamabad</option>
+      <option value="peshawar">Peshawar</option>
+      <option value="quetta">Quetta</option>
+      <option value="multan">Multan</option>
+    </select>
+    <button onclick="calcSolar()">Get Solar Recommendation</button>
+    <div class="solar-grid" id="solar-result" style="display:none">
+      <div class="solar-stat"><div class="val" id="s-kw">—</div><div class="lbl">System Size (kW)</div></div>
+      <div class="solar-stat"><div class="val" id="s-panels">—</div><div class="lbl">Solar Panels Needed</div></div>
+      <div class="solar-stat"><div class="val" id="s-cost">—</div><div class="lbl">Estimated Cost (Rs.)</div></div>
+      <div class="solar-stat"><div class="val" id="s-payback">—</div><div class="lbl">Payback Period (Years)</div></div>
+      <div class="solar-stat"><div class="val" id="s-monthly">—</div><div class="lbl">Monthly Savings (Rs.)</div></div>
+      <div class="solar-stat"><div class="val" id="s-annual">—</div><div class="lbl">Annual Savings (Rs.)</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-chat">
+  <div class="card">
+    <h2>🤖 AI Energy Advisor</h2>
+    <p style="font-size:12px;color:#666;margin-bottom:16px">Ask anything about your electricity bill, appliances, or solar in English or Roman Urdu</p>
+    <div id="chat-messages">
+      <div class="msg bot">Assalam o Alaikum! Main aapka Pakistan Energy Advisor hoon. Apna bill, appliances, ya solar ke baare mein kuch bhi poochein! 🌟</div>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="chat-input" placeholder="e.g. Mera AC kitna bill barhata hai?" onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button onclick="sendChat()">Send ↗</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const chatHistory = [];
+
+function escapeHtml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function showTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+async function calcBill() {
+  const units = document.getElementById('bill-units').value;
+  if (!units || units < 1) return alert('Please enter your monthly units');
+  try {
+    const res = await fetch('/api/bill', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ units: Number(units) })
+    });
+    const d = await res.json();
+    document.getElementById('r-unit').textContent = 'Rs. ' + d.unitCost.toLocaleString();
+    document.getElementById('r-fuel').textContent = 'Rs. ' + d.fuelAdjustment.toLocaleString();
+    document.getElementById('r-duty').textContent = 'Rs. ' + d.electricityDuty.toLocaleString();
+    document.getElementById('r-extra').textContent = 'Rs. ' + (d.tvFee + d.meterRent);
+    document.getElementById('r-total').textContent = 'Rs. ' + d.total.toLocaleString();
+    document.getElementById('bill-result').classList.add('show');
+    const warn = document.getElementById('bill-warning');
+    if (units > 300) {
+      warn.innerHTML = '<div class="warning">⚠️ You are in a high tariff slab! Shift heavy appliances to off-peak hours (11pm–7am) to reduce your bill.</div>';
+    } else if (units <= 100) {
+      warn.innerHTML = '<div class="success">✅ You are in the lowest tariff slab. Great job keeping consumption low!</div>';
+    } else {
+      warn.innerHTML = '';
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function calcAppliance() {
+  const appliance = document.getElementById('app-select').value;
+  const hours = document.getElementById('app-hours').value;
+  if (!hours || hours < 0.5) return alert('Please enter hours used per day');
+  try {
+    const res = await fetch('/api/appliance', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ appliance, hours: Number(hours) })
+    });
+    const d = await res.json();
+    document.getElementById('a-name').textContent = d.name;
+    document.getElementById('a-upd').textContent = d.unitsPerDay + ' kWh';
+    document.getElementById('a-upm').textContent = d.unitsPerMonth + ' kWh';
+    document.getElementById('a-cpd').textContent = 'Rs. ' + d.costPerDay.toLocaleString();
+    document.getElementById('a-cpm').textContent = 'Rs. ' + d.costPerMonth.toLocaleString();
+    document.getElementById('app-result').classList.add('show');
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function calcSolar() {
+  const units = document.getElementById('sol-units').value;
+  const city = document.getElementById('sol-city').value;
+  if (!units || units < 1) return alert('Please enter your monthly units');
+  try {
+    const res = await fetch('/api/solar', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ units: Number(units), city })
+    });
+    const d = await res.json();
+    document.getElementById('s-kw').textContent = d.recommendedKW + ' kW';
+    document.getElementById('s-panels').textContent = d.panels;
+    document.getElementById('s-cost').textContent = 'Rs. ' + d.estimatedCost.toLocaleString();
+    document.getElementById('s-payback').textContent = d.paybackYears + ' yrs';
+    document.getElementById('s-monthly').textContent = 'Rs. ' + d.monthlySavings.toLocaleString();
+    document.getElementById('s-annual').textContent = 'Rs. ' + d.annualSavings.toLocaleString();
+    document.getElementById('solar-result').style.display = 'grid';
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  const messages = document.getElementById('chat-messages');
+  messages.innerHTML += '<div class="msg user">' + escapeHtml(msg) + '</div>';
+  messages.innerHTML += '<div class="msg typing" id="typing-msg">Thinking...</div>';
+  messages.scrollTop = messages.scrollHeight;
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ message: msg, history: chatHistory })
+    });
+    const d = await res.json();
+    const typing = document.getElementById('typing-msg');
+    if (typing) typing.remove();
+    const reply = d.reply || d.error || 'Something went wrong';
+    messages.innerHTML += '<div class="msg bot">' + escapeHtml(reply).replace(/\n/g, '<br>') + '</div>';
+    chatHistory.push({ role: 'user', content: msg });
+    chatHistory.push({ role: 'assistant', content: reply });
+    messages.scrollTop = messages.scrollHeight;
+  } catch(e) {
+    const typing = document.getElementById('typing-msg');
+    if (typing) typing.remove();
+    messages.innerHTML += '<div class="msg bot">Error: ' + escapeHtml(e.message) + '</div>';
+    messages.scrollTop = messages.scrollHeight;
+  }
+}
+</script>
+</body>
+</html>
